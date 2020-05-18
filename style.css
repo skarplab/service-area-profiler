@@ -1,0 +1,60 @@
+:root {
+    --main-bg-color: #01426A;
+    --secondary-bg-color: #F2F2F2;
+    --main-text-color: #FFF;
+    --secondary-text-color: #706666;
+}
+
+* {
+    border: 1px solid red;
+}
+
+html, body {
+    padding: 0;
+    margin: 0;
+    height: 100%;
+    width: 100%;
+    font-family: "Avenir Next W00";
+    color: var(--main-text-color);
+  }
+
+  .header {
+    grid-area: header;
+    background-color: var(--main-bg-color);
+  }
+
+  .sidebar {
+    grid-area: sidebar;
+    background-color: var(--secondary-bg-color);
+    color: var(--secondary-text-color);
+  }
+
+  .map {
+    grid-area: map;
+  }
+
+  .wrapper {
+    display: grid;
+    grid-template-rows: 10%  40% auto;
+    grid-template-areas:
+     "header"
+     "sidebar"
+     "map";
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .box {
+    padding: 10px;
+    font-size: 20px; 
+  }
+
+  @media only screen and (min-width: 544px)  {
+    .wrapper {
+      grid-template-columns: 30% auto;
+      grid-template-rows: 60px  auto;
+      grid-template-areas:
+        "header   header"
+        "sidebar  map";
+      }
+    }
