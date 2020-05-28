@@ -23,7 +23,7 @@ require([
 
   // LAYERS
   let blocksLayer = new GeoJSONLayer({
-    url: "../../data.geojson",
+    url: "./data.geojson",
     outFields: ["los_total_score", "totpop_2019", "ses_2018"],
     renderer: {
       type: "simple",
