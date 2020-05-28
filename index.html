@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<meta name="description" content="App Design and CSS - Layout Partial Page CSS Grid">
+  <meta name="description" content="App Design and CSS - Layout Partial Page CSS Grid">
   <meta charset="utf-8">
   <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>App Design and CSS - Partial Page CSS Grid</title>
+  <title>PRCR Service Area Profiler</title>
 
   <link rel="stylesheet" href="https://js.arcgis.com/4.15/esri/css/main.css">
   <link rel="stylesheet" href="style.css">
@@ -12,18 +13,43 @@
   <script src="https://js.arcgis.com/4.15/"></script>
   <script src="app.js" defer></script>
 </head>
+
 <body>
   <div class="wrapper">
     <div class="box header" id="titleDiv">PRCR Service Area Profiler</div>
     <div class="box sidebar">
       <section id="inputs">
         <h2>Inputs</h2>
+        <form>
+          <fieldset>
+            <legend>Travel Time</legend>
+            <div>
+              <label for="minutes">Minutes:</label>
+              <input type="range" name="minutes" id="minutes" min="0" max="10" step="1" value="10"><span
+                id="minutes-slider-value">10</span>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Mode</legend>
+            <div>
+              <label for="walk">Walk</label><input type="radio" name="mode" id="walk" value="5" checked>
+              <label for="drive">Drive</label><input type="radio" name="mode" id="drive" value="1">
+            </div>
+          </fieldset>
+        </form>
       </section>
       <section id="results">
         <h2>Results</h2>
+        <p>Total Population: <span id="totpop-stat">-</span></p>
+        <p>Average Level of Service: <span id="los-stat">-</span>
+          <p>Average Social Equity Score: <span id="ses-stat">-</span>
+            <div id="clear-button-container">
+              <button id="clear-button">Clear Results</button>
+            </div>
       </section>
     </div>
     <div class="map" id="viewDiv"></div>
   </div>
 </body>
+
 </html>

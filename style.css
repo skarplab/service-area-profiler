@@ -5,9 +5,9 @@
     --secondary-text-color: #706666;
 }
 
-* {
+/* * {
     border: 1px solid red;
-}
+} */
 
 html, body {
     padding: 0;
@@ -27,6 +27,8 @@ html, body {
     grid-area: sidebar;
     background-color: var(--secondary-bg-color);
     color: var(--secondary-text-color);
+    overflow-y: auto;
+
   }
 
   .map {
@@ -35,7 +37,7 @@ html, body {
 
   .wrapper {
     display: grid;
-    grid-template-rows: 10%  40% auto;
+    grid-template-rows: 60px  40% auto;
     grid-template-areas:
      "header"
      "sidebar"
@@ -49,7 +51,7 @@ html, body {
     font-size: 20px; 
   }
 
-  @media only screen and (min-width: 544px)  {
+  @media only screen and (min-width: 720px)  {
     .wrapper {
       grid-template-columns: 30% auto;
       grid-template-rows: 60px  auto;
