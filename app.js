@@ -18,7 +18,12 @@ require([
     container: "viewDiv",
     map: map,
     zoom: 14,
-    center: [-78.613186, 35.792954]
+    center: [-78.613186, 35.792954],
+    highlightOptions: {
+      color: '#673AB7',
+      haloOpacity: 0,
+      fillOpacity: 0.25
+    }
   });
 
   // LAYERS
@@ -28,9 +33,11 @@ require([
     renderer: {
       type: "simple",
       symbol: {
-        type: "simple-line",
-        color: "rgba(121,85,72,0.25)",
-        width: 0.01
+        type: "simple-fill",
+        color: [0, 0, 0, 0],
+        outline: {
+          width: 0
+        }
       }
     }
   })
@@ -132,7 +139,9 @@ require([
       symbol: {
         type: "simple-line",
         color: [0, 0, 0, 0.5],
-        width: 1
+        width: 1.25,
+        join: "round",
+        miter: "square"
       }
     });
     layer.add(graphic);
