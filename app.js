@@ -29,7 +29,7 @@ require([
   // LAYERS
   let blocksLayer = new GeoJSONLayer({
     url: "./data.geojson",
-    outFields: ["los_total_score", "totpop_2019", "ses_2018"],
+    outFields: ["los_total_score", "totpop_2020", "ses_2018"],
     renderer: {
       type: "simple",
       symbol: {
@@ -97,7 +97,7 @@ require([
               .then(results => {
                 const attributes = results.features[0].attributes
                 console.log(attributes)
-                document.getElementById("totpop-stat").innerText = attributes.totpop_2019_sum.toLocaleString();
+                document.getElementById("totpop-stat").innerText = attributes.totpop_2020_sum.toLocaleString();
                 document.getElementById("los-stat").innerText = `${losScoreToGrade(attributes.los_total_score_mean)} (${attributes.los_total_score_mean.toFixed(2)})`;
                 document.getElementById("ses-stat").innerText = attributes.ses_2018_mean.toFixed(2);
                 watchUtils.whenFalseOnce(blocksLayerView, "updating", val => {
@@ -154,8 +154,8 @@ require([
     outStatisticFieldName: "count",
     statisticType: "count"
   }, {
-    onStatisticField: "totpop_2019",
-    outStatisticFieldName: "totpop_2019_sum",
+    onStatisticField: "totpop_2020",
+    outStatisticFieldName: "totpop_2020_sum",
     statisticType: "sum"
   }, {
     onStatisticField: "los_total_score",
