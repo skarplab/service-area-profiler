@@ -140,7 +140,7 @@ require([
                 console.log(attributes)
                 document.getElementById("totpop-stat").innerText = attributes.totpop_2020_sum.toLocaleString();
                 document.getElementById("los-stat").innerText = `${losScoreToGrade(attributes.los_total_score_mean)} (${attributes.los_total_score_mean.toFixed(2)})`;
-                document.getElementById("lap-stat").innerText = attributes.lap_score_mean.toFixed(2);
+                document.getElementById("lap-stat").innerText = `${priorityLevel(attributes.lap_score_mean)} (${attributes.lap_score_mean.toFixed(2)})`;
                 document.getElementById("ses-stat").innerText = attributes.ses_2018_mean.toFixed(2);
                 watchUtils.whenFalseOnce(blocksLayerView, "updating", val => {
                   blocksLayerView.queryObjectIds(query)
@@ -222,6 +222,14 @@ require([
       '';
   }
 
+  function priorityLevel(val) {
+    return val >= 80 ? 'Very High' :
+           val >= 60 ? 'High'      :
+           val >= 40 ? 'Medium'    :
+           val >= 20 ? 'Low'       :
+           val >=  0 ? 'Very Low'  :
+                       '🤷';
+  }
 
   // UI
 
