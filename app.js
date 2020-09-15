@@ -1,14 +1,17 @@
 require([
   "esri/Map",
   "esri/views/MapView",
+  "esri/layers/FeatureLayer",
   "esri/layers/GeoJSONLayer",
   "esri/layers/GraphicsLayer",
   "esri/tasks/ServiceAreaTask",
   "esri/tasks/support/ServiceAreaParameters",
   "esri/tasks/support/FeatureSet",
   "esri/Graphic",
+  "esri/widgets/LayerList",
+  "esri/widgets/Expand",
   "esri/core/watchUtils"
-], function (Map, MapView, GeoJSONLayer, GraphicsLayer, ServiceAreaTask, ServiceAreaParams, FeatureSet, Graphic, watchUtils) {
+], function (Map, MapView, FeatureLayer, GeoJSONLayer, GraphicsLayer, ServiceAreaTask, ServiceAreaParams, FeatureSet, Graphic, LayerList, Expand, watchUtils) {
 
   const map = new Map({
     basemap: "streets-navigation-vector"
@@ -30,6 +33,7 @@ require([
   let blocksLayer = new GeoJSONLayer({
     url: "./data.geojson",
     outFields: ["los_total_score", "lap_score", "totpop_2020", "ses_2018"],
+    listMode: 'hide',
     renderer: {
       type: "simple",
       symbol: {
@@ -41,12 +45,49 @@ require([
       }
     }
   })
+
+  let recapLayer = new FeatureLayer({
+    url: 'https://services.arcgis.com/VTyQ9soqVukalItT/arcgis/rest/services/Racially_or_Ethnically_Concentrated_Areas_of_Poverty/FeatureServer/0',
+    outFields: ['GEOID', 'STUSAB', 'COUNTY_NAME', 'rcap_current'],
+    definitionExpression: "STUSAB='NC' AND COUNTY_NAME='Wake' AND rcap_current=1",
+    title: "Racially/Ethnically Concentrated Areas of Poverty",
+    visible: false,
+    renderer: {
+      type: "simple",
+      symbol: {
+        type: 'simple-fill',
+        style: 'diagonal-cross',
+        color: '#90A4AE',
+        outline: {
+          width: 0
+        }
+      }
+    }
+  })
   let highlight;
   let nsaGeometry;
-  let nsaLayer = new GraphicsLayer();
-  let pointLayer = new GraphicsLayer();
-  map.addMany([blocksLayer, nsaLayer, pointLayer]);
+  let nsaLayer = new GraphicsLayer({
+    listMode: 'hide'
+  });
+  let pointLayer = new GraphicsLayer({
+    listMode: 'hide'
+  });
+  map.addMany([blocksLayer, recapLayer, nsaLayer, pointLayer]);
 
+  // Expandable layer list to toggle R/ECAP layer
+  view.when( () => {
+    const layerList = new LayerList({
+      container: document.createElement('div'),
+      view: view
+    })
+    const layerListExpand = new Expand({
+      expandIconClass: 'esri-icon-layer-list',
+      view: view,
+      content: layerList.domNode
+    })
+
+    view.ui.add(layerListExpand, 'top-right')
+  }) 
   //FUNCTIONS
 
   // Main Query Function
