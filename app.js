@@ -1,235 +1,145 @@
-require([
-  "esri/Map",
-  "esri/views/MapView",
-  "esri/layers/FeatureLayer",
-  "esri/layers/GeoJSONLayer",
-  "esri/layers/GraphicsLayer",
-  "esri/tasks/ServiceAreaTask",
-  "esri/tasks/support/ServiceAreaParameters",
-  "esri/tasks/support/FeatureSet",
-  "esri/Graphic",
-  "esri/widgets/LayerList",
-  "esri/widgets/Expand",
-  "esri/core/watchUtils"
-], function (Map, MapView, FeatureLayer, GeoJSONLayer, GraphicsLayer, ServiceAreaTask, ServiceAreaParams, FeatureSet, Graphic, LayerList, Expand, watchUtils) {
+const map = L.map('map').setView([35.8, -78.65], 11)
+L.esri.basemapLayer('Streets').addTo(map)
 
-  const map = new Map({
-    basemap: "streets-navigation-vector"
-  });
+// LAYERS
+let blocks = L.featureGroup()
+let isoline = L.featureGroup()
+let point = L.featureGroup()
+let mapClickPoint = L.featureGroup().addTo(map)
 
-  const view = new MapView({
-    container: "viewDiv",
-    map: map,
-    zoom: 14,
-    center: [-78.613186, 35.792954],
-    highlightOptions: {
-      color: '#673AB7',
-      haloOpacity: 0,
-      fillOpacity: 0.25
-    }
-  });
-
-  // LAYERS
-  let blocksLayer = new GeoJSONLayer({
-    url: "./data.geojson",
-    outFields: ["los_total_score", "lap_score", "totpop_2020", "ses_2018"],
-    listMode: 'hide',
-    renderer: {
-      type: "simple",
-      symbol: {
-        type: "simple-fill",
-        color: [0, 0, 0, 0],
-        outline: {
-          width: 0
-        }
+// Service Area Variables 
+const travelModes = {
+  "walkTime": {
+    "attributeParameterValues": [
+      {
+        "attributeName": "Avoid Private Roads",
+        "parameterName": "Restriction Usage",
+        "value": "AVOID_MEDIUM"
+      },
+      {
+        "attributeName": "Walking",
+        "parameterName": "Restriction Usage",
+        "value": "PROHIBITED"
+      },
+      {
+        "attributeName": "Preferred for Pedestrians",
+        "parameterName": "Restriction Usage",
+        "value": "PREFER_LOW"
+      },
+      {
+        "attributeName": "WalkTime",
+        "parameterName": "Walking Speed (km\/h)",
+        "value": 5
+      },
+      {
+        "attributeName": "Avoid Roads Unsuitable for Pedestrians",
+        "parameterName": "Restriction Usage",
+        "value": "AVOID_HIGH"
       }
-    }
-  })
-
-  let recapLayer = new FeatureLayer({
-    url: 'https://services.arcgis.com/VTyQ9soqVukalItT/arcgis/rest/services/Racially_or_Ethnically_Concentrated_Areas_of_Poverty/FeatureServer/0',
-    outFields: ['GEOID', 'STUSAB', 'COUNTY_NAME', 'rcap_current'],
-    definitionExpression: "STUSAB='NC' AND COUNTY_NAME='Wake' AND rcap_current=1",
-    title: "Racially/Ethnically Concentrated Areas of Poverty",
-    visible: false,
-    renderer: {
-      type: "simple",
-      symbol: {
-        type: 'simple-fill',
-        style: 'diagonal-cross',
-        color: '#90A4AE',
-        outline: {
-          width: 0
-        }
+    ],
+    "description": "Follows paths and roads that allow pedestrian traffic and finds solutions that optimize travel time. The walking speed is set to 5 kilometers per hour.",
+    "distanceAttributeName": "Kilometers",
+    "id": "caFAgoThrvUpkFBW",
+    "impedanceAttributeName": "WalkTime",
+    "name": "Walking Time",
+    "restrictionAttributeNames": [
+      "Avoid Private Roads",
+      "Avoid Roads Unsuitable for Pedestrians",
+      "Preferred for Pedestrians",
+      "Walking"
+    ],
+    "simplificationTolerance": 2,
+    "simplificationToleranceUnits": "esriMeters",
+    "timeAttributeName": "WalkTime",
+    "type": "WALK",
+    "useHierarchy": false,
+    "uturnAtJunctions": "esriNFSBAllowBacktrack"
+  },
+  "driveTime": {
+    "attributeParameterValues": [
+      {
+        "attributeName": "Avoid Unpaved Roads",
+        "parameterName": "Restriction Usage",
+        "value": "AVOID_HIGH"
+      },
+      {
+        "attributeName": "Avoid Private Roads",
+        "parameterName": "Restriction Usage",
+        "value": "AVOID_MEDIUM"
+      },
+      {
+        "attributeName": "Driving an Automobile",
+        "parameterName": "Restriction Usage",
+        "value": "PROHIBITED"
+      },
+      {
+        "attributeName": "Through Traffic Prohibited",
+        "parameterName": "Restriction Usage",
+        "value": "AVOID_HIGH"
+      },
+      {
+        "attributeName": "TravelTime",
+        "parameterName": "Vehicle Maximum Speed (km\/h)",
+        "value": 0
+      },
+      {
+        "attributeName": "Roads Under Construction Prohibited",
+        "parameterName": "Restriction Usage",
+        "value": "PROHIBITED"
+      },
+      {
+        "attributeName": "Avoid Gates",
+        "parameterName": "Restriction Usage",
+        "value": "AVOID_MEDIUM"
+      },
+      {
+        "attributeName": "Avoid Express Lanes",
+        "parameterName": "Restriction Usage",
+        "value": "PROHIBITED"
+      },
+      {
+        "attributeName": "Avoid Carpool Roads",
+        "parameterName": "Restriction Usage",
+        "value": "PROHIBITED"
       }
-    }
-  })
-  let highlight;
-  let nsaGeometry;
-  let nsaLayer = new GraphicsLayer({
-    listMode: 'hide'
-  });
-  let pointLayer = new GraphicsLayer({
-    listMode: 'hide'
-  });
-  map.addMany([blocksLayer, recapLayer, nsaLayer, pointLayer]);
-
-  // Expandable layer list to toggle R/ECAP layer
-  view.when( () => {
-    const layerList = new LayerList({
-      container: document.createElement('div'),
-      view: view
-    })
-    const layerListExpand = new Expand({
-      expandIconClass: 'esri-icon-layer-list',
-      view: view,
-      content: layerList.domNode
-    })
-
-    view.ui.add(layerListExpand, 'top-right')
-  }) 
-  //FUNCTIONS
-
-  // Main Query Function
-  let blocksLayerView;
-  view.whenLayerView(blocksLayer).then(lv => {
-    blocksLayerView = lv;
-    watchUtils.whenFalseOnce(blocksLayerView, "updating", val => {
-      view.on(["click"], evt => {
-        // CLEAR PREVIOUS RESULTS
-        resetResults();
-        // RETRIEVE SERVICE AREA
-        // Generate isochrone
-        let serviceAreaTask = new ServiceAreaTask({
-          url: "https://utility.arcgis.com/usrsvcs/appservices/cD6s6VKuje0IvTZF/rest/services/World/ServiceAreas/NAServer/ServiceArea_World/solveServiceArea"
-        })
-        let mode = getCheckedRadioValue("mode")
-        if (mode === "1") {
-          time = 5
-        } else if (mode === "5") {
-          time = 10
-        }
-
-        let point = view.toMap(evt);
-        pointGraphic = createPointGraphic(pointLayer, point)
-        let featureSet = new FeatureSet({
-          features: [pointGraphic]
-        })
-        // "1" is the itemId value for the Driving Time travel mode on this Network Analyst server
-        // "5" is the itemId value for the Walking Time travel mode on this Network Analyst server
-        // More info on how to find your travel modes IDs:
-        // https://developers.arcgis.com/rest/services-reference/gettravelmodes-tool.htm
-        let serviceAreaParams = new ServiceAreaParams({
-          facilities: featureSet,
-          travelMode: mode,
-          defaultBreaks: [time]
-        });
-        serviceAreaTask.solve(serviceAreaParams)
-          .then(result => {
-            nsaGeometry = result.serviceAreaPolygons[0].geometry
-            createNSAGraphic(nsaLayer, nsaGeometry)
-            view.goTo(nsaGeometry.extent)
-            // Query the blocks using the resulting isochrone
-            let query = blocksLayerView.layer.createQuery();
-            query.outStatistics = statDefinitions;
-            query.geometry = nsaGeometry;
-
-            blocksLayerView.queryFeatures(query)
-              .then(results => {
-                const attributes = results.features[0].attributes
-                console.log(attributes)
-                document.getElementById("totpop-stat").innerText = attributes.totpop_2020_sum.toLocaleString();
-                document.getElementById("los-stat").innerText = `${losScoreToGrade(attributes.los_total_score_mean)} (${attributes.los_total_score_mean.toFixed(2)})`;
-                document.getElementById("lap-stat").innerText = `${priorityLevel(attributes.lap_score_mean)} (${attributes.lap_score_mean.toFixed(2)})`;
-                document.getElementById("ses-stat").innerText = attributes.ses_2018_mean.toFixed(2);
-                watchUtils.whenFalseOnce(blocksLayerView, "updating", val => {
-                  blocksLayerView.queryObjectIds(query)
-                    .then(ids => {
-                      if (highlight) {
-                        highlight.remove();
-                      }
-                      highlight = blocksLayerView.highlight(ids)
-                    })
-                })
-              })
-          })
-      })
-    })
-  })
-
-  // Graphics
-  function createPointGraphic(layer, point) {
-    let graphic = new Graphic({
-      geometry: point,
-      symbol: {
-        type: "simple-marker",
-        color: [0, 0, 0, 0.5],
-        size: 12,
-        outline: {
-          width: 0
-        }
-      }
-    });
-
-    layer.add(graphic);
-    return graphic;
+    ],
+    "description": "Models the movement of cars and other similar small automobiles, such as pickup trucks, and finds solutions that optimize travel time. Travel obeys one-way roads, avoids illegal turns, and follows other rules that are specific to cars. When you specify a start time, dynamic travel speeds based on traffic are used where it is available.",
+    "distanceAttributeName": "Kilometers",
+    "id": "FEgifRtFndKNcJMJ",
+    "impedanceAttributeName": "TravelTime",
+    "name": "Driving Time",
+    "restrictionAttributeNames": [
+      "Avoid Unpaved Roads",
+      "Avoid Private Roads",
+      "Driving an Automobile",
+      "Through Traffic Prohibited",
+      "Roads Under Construction Prohibited",
+      "Avoid Gates",
+      "Avoid Express Lanes",
+      "Avoid Carpool Roads"
+    ],
+    "simplificationTolerance": 10,
+    "simplificationToleranceUnits": "esriMeters",
+    "timeAttributeName": "TravelTime",
+    "type": "AUTOMOBILE",
+    "useHierarchy": true,
+    "uturnAtJunctions": "esriNFSBAtDeadEndsAndIntersections"
   }
+}
 
-  function createNSAGraphic(layer, nsaGeometry) {
-    let graphic = new Graphic({
-      geometry: nsaGeometry,
-      symbol: {
-        type: "simple-line",
-        color: [0, 0, 0, 0.5],
-        width: 1.25,
-        join: "round",
-        miter: "square"
-      }
-    });
-    layer.add(graphic);
-    return graphic;
-  }
+map.on('click', e => {
+  // Clear previous analysis layers
+  mapClickPoint.clearLayers()
 
-  // Stats
-  const statDefinitions = [{
-    onStatisticField: "1=1",
-    outStatisticFieldName: "count",
-    statisticType: "count"
-  }, {
-    onStatisticField: "totpop_2020",
-    outStatisticFieldName: "totpop_2020_sum",
-    statisticType: "sum"
-  }, {
-    onStatisticField: "los_total_score",
-    outStatisticFieldName: "los_total_score_mean",
-    statisticType: "avg"
-  }, {
-    onStatisticField: "lap_score",
-    outStatisticFieldName: "lap_score_mean",
-    statisticType: "avg"
-  }, {
-    onStatisticField: "ses_2018",
-    outStatisticFieldName: "ses_2018_mean",
-    statisticType: "avg"
-  }]
+  // Get parameters
 
-  function losScoreToGrade(score) {
-    return score >= 17 ? 'A' :
-      score >= 13 ? 'B' :
-      score >= 9 ? 'C' :
-      score >= 5 ? 'D' :
-      score === 4 ? 'F' :
-      '';
-  }
+  // Run Analysis
 
-  function priorityLevel(val) {
-    return val >= 80 ? 'Very High' :
-           val >= 60 ? 'High'      :
-           val >= 40 ? 'Medium'    :
-           val >= 20 ? 'Low'       :
-           val >=  0 ? 'Very Low'  :
-                       '🤷';
-  }
+  // Add Layers
+  mapClickPoint.addLayer(L.marker([e.latlng.lat, e.latlng.lng]))
+
+})
+
 
   // UI
 
@@ -246,22 +156,22 @@ require([
     return selectedValue
   }
   // Clear everything
-  document.getElementById("clear-button").addEventListener("click", resetResults)
+  // document.getElementById("clear-button").addEventListener("click", resetResults)
 
-  function clearGraphics(layer) {
-    layer.removeAll();
-  }
+  // function clearGraphics(layer) {
+  //   layer.removeAll();
+  // }
 
-  function resetResults() {
-    clearGraphics(nsaLayer);
-    clearGraphics(pointLayer);
-    if (highlight) {
-      highlight.remove();
-    }
-    for (stat of ["totpop-stat", "los-stat", "lap-stat", "ses-stat"]) {
-      document.getElementById(stat).innerText = "-"
-    }
-  }
+  // function resetResults() {
+  //   clearGraphics(nsaLayer);
+  //   clearGraphics(pointLayer);
+  //   if (highlight) {
+  //     highlight.remove();
+  //   }
+  //   for (stat of ["totpop-stat", "los-stat", "lap-stat", "ses-stat"]) {
+  //     document.getElementById(stat).innerText = "-"
+  //   }
+  // }
 
   // Range slider
   const rangeSlider = document.getElementById("minutes");
@@ -269,4 +179,241 @@ require([
     document.getElementById("minutes-slider-value").innerText = rangeSlider.value
   })
 
-});
+
+
+
+
+// require([
+//   "esri/Map",
+//   "esri/views/MapView",
+//   "esri/layers/FeatureLayer",
+//   "esri/layers/GeoJSONLayer",
+//   "esri/layers/GraphicsLayer",
+//   "esri/tasks/ServiceAreaTask",
+//   "esri/tasks/support/ServiceAreaParameters",
+//   "esri/tasks/support/FeatureSet",
+//   "esri/Graphic",
+//   "esri/widgets/LayerList",
+//   "esri/widgets/Expand",
+//   "esri/core/watchUtils"
+// ], function (Map, MapView, FeatureLayer, GeoJSONLayer, GraphicsLayer, ServiceAreaTask, ServiceAreaParams, FeatureSet, Graphic, LayerList, Expand, watchUtils) {
+
+//   const map = new Map({
+//     basemap: "streets-navigation-vector"
+//   });
+
+//   const view = new MapView({
+//     container: "viewDiv",
+//     map: map,
+//     zoom: 14,
+//     center: [-78.613186, 35.792954],
+//     highlightOptions: {
+//       color: '#673AB7',
+//       haloOpacity: 0,
+//       fillOpacity: 0.25
+//     }
+//   });
+
+//   // LAYERS
+//   let blocksLayer = new GeoJSONLayer({
+//     url: "./data.geojson",
+//     outFields: ["los_total_score", "lap_score", "totpop_2020", "ses_2018"],
+//     listMode: 'hide',
+//     renderer: {
+//       type: "simple",
+//       symbol: {
+//         type: "simple-fill",
+//         color: [0, 0, 0, 0],
+//         outline: {
+//           width: 0
+//         }
+//       }
+//     }
+//   })
+
+//   let recapLayer = new FeatureLayer({
+//     url: 'https://services.arcgis.com/VTyQ9soqVukalItT/arcgis/rest/services/Racially_or_Ethnically_Concentrated_Areas_of_Poverty/FeatureServer/0',
+//     outFields: ['GEOID', 'STUSAB', 'COUNTY_NAME', 'rcap_current'],
+//     definitionExpression: "STUSAB='NC' AND COUNTY_NAME='Wake' AND rcap_current=1",
+//     title: "Racially/Ethnically Concentrated Areas of Poverty",
+//     visible: false,
+//     renderer: {
+//       type: "simple",
+//       symbol: {
+//         type: 'simple-fill',
+//         style: 'diagonal-cross',
+//         color: '#90A4AE',
+//         outline: {
+//           width: 0
+//         }
+//       }
+//     }
+//   })
+//   let highlight;
+//   let nsaGeometry;
+//   let nsaLayer = new GraphicsLayer({
+//     listMode: 'hide'
+//   });
+//   let pointLayer = new GraphicsLayer({
+//     listMode: 'hide'
+//   });
+//   map.addMany([blocksLayer, recapLayer, nsaLayer, pointLayer]);
+
+//   // Expandable layer list to toggle R/ECAP layer
+//   view.when( () => {
+//     const layerList = new LayerList({
+//       container: document.createElement('div'),
+//       view: view
+//     })
+//     const layerListExpand = new Expand({
+//       expandIconClass: 'esri-icon-layer-list',
+//       view: view,
+//       content: layerList.domNode
+//     })
+
+//     view.ui.add(layerListExpand, 'top-right')
+//   }) 
+//   //FUNCTIONS
+
+//   // Main Query Function
+//   let blocksLayerView;
+//   view.whenLayerView(blocksLayer).then(lv => {
+//     blocksLayerView = lv;
+//     watchUtils.whenFalseOnce(blocksLayerView, "updating", val => {
+//       view.on(["click"], evt => {
+//         // CLEAR PREVIOUS RESULTS
+//         resetResults();
+//         // RETRIEVE SERVICE AREA
+//         // Generate isochrone
+//         let serviceAreaTask = new ServiceAreaTask({
+//           url: "https://utility.arcgis.com/usrsvcs/appservices/cD6s6VKuje0IvTZF/rest/services/World/ServiceAreas/NAServer/ServiceArea_World/solveServiceArea"
+//         })
+//         let mode = getCheckedRadioValue("mode")
+//         if (mode === "1") {
+//           time = 5
+//         } else if (mode === "5") {
+//           time = 10
+//         }
+
+//         let point = view.toMap(evt);
+//         pointGraphic = createPointGraphic(pointLayer, point)
+//         let featureSet = new FeatureSet({
+//           features: [pointGraphic]
+//         })
+//         // "1" is the itemId value for the Driving Time travel mode on this Network Analyst server
+//         // "5" is the itemId value for the Walking Time travel mode on this Network Analyst server
+//         // More info on how to find your travel modes IDs:
+//         // https://developers.arcgis.com/rest/services-reference/gettravelmodes-tool.htm
+//         let serviceAreaParams = new ServiceAreaParams({
+//           facilities: featureSet,
+//           travelMode: mode,
+//           defaultBreaks: [time]
+//         });
+//         serviceAreaTask.solve(serviceAreaParams)
+//           .then(result => {
+//             nsaGeometry = result.serviceAreaPolygons[0].geometry
+//             createNSAGraphic(nsaLayer, nsaGeometry)
+//             view.goTo(nsaGeometry.extent)
+//             // Query the blocks using the resulting isochrone
+//             let query = blocksLayerView.layer.createQuery();
+//             query.outStatistics = statDefinitions;
+//             query.geometry = nsaGeometry;
+
+//             blocksLayerView.queryFeatures(query)
+//               .then(results => {
+//                 const attributes = results.features[0].attributes
+//                 console.log(attributes)
+//                 document.getElementById("totpop-stat").innerText = attributes.totpop_2020_sum.toLocaleString();
+//                 document.getElementById("los-stat").innerText = `${losScoreToGrade(attributes.los_total_score_mean)} (${attributes.los_total_score_mean.toFixed(2)})`;
+//                 document.getElementById("lap-stat").innerText = `${priorityLevel(attributes.lap_score_mean)} (${attributes.lap_score_mean.toFixed(2)})`;
+//                 document.getElementById("ses-stat").innerText = attributes.ses_2018_mean.toFixed(2);
+//                 watchUtils.whenFalseOnce(blocksLayerView, "updating", val => {
+//                   blocksLayerView.queryObjectIds(query)
+//                     .then(ids => {
+//                       if (highlight) {
+//                         highlight.remove();
+//                       }
+//                       highlight = blocksLayerView.highlight(ids)
+//                     })
+//                 })
+//               })
+//           })
+//       })
+//     })
+//   })
+
+//   // Graphics
+//   function createPointGraphic(layer, point) {
+//     let graphic = new Graphic({
+//       geometry: point,
+//       symbol: {
+//         type: "simple-marker",
+//         color: [0, 0, 0, 0.5],
+//         size: 12,
+//         outline: {
+//           width: 0
+//         }
+//       }
+//     });
+
+//     layer.add(graphic);
+//     return graphic;
+//   }
+
+//   function createNSAGraphic(layer, nsaGeometry) {
+//     let graphic = new Graphic({
+//       geometry: nsaGeometry,
+//       symbol: {
+//         type: "simple-line",
+//         color: [0, 0, 0, 0.5],
+//         width: 1.25,
+//         join: "round",
+//         miter: "square"
+//       }
+//     });
+//     layer.add(graphic);
+//     return graphic;
+//   }
+
+//   // Stats
+//   const statDefinitions = [{
+//     onStatisticField: "1=1",
+//     outStatisticFieldName: "count",
+//     statisticType: "count"
+//   }, {
+//     onStatisticField: "totpop_2020",
+//     outStatisticFieldName: "totpop_2020_sum",
+//     statisticType: "sum"
+//   }, {
+//     onStatisticField: "los_total_score",
+//     outStatisticFieldName: "los_total_score_mean",
+//     statisticType: "avg"
+//   }, {
+//     onStatisticField: "lap_score",
+//     outStatisticFieldName: "lap_score_mean",
+//     statisticType: "avg"
+//   }, {
+//     onStatisticField: "ses_2018",
+//     outStatisticFieldName: "ses_2018_mean",
+//     statisticType: "avg"
+//   }]
+
+//   function losScoreToGrade(score) {
+//     return score >= 17 ? 'A' :
+//       score >= 13 ? 'B' :
+//       score >= 9 ? 'C' :
+//       score >= 5 ? 'D' :
+//       score === 4 ? 'F' :
+//       '';
+//   }
+
+//   function priorityLevel(val) {
+//     return val >= 80 ? 'Very High' :
+//            val >= 60 ? 'High'      :
+//            val >= 40 ? 'Medium'    :
+//            val >= 20 ? 'Low'       :
+//            val >=  0 ? 'Very Low'  :
+//                        '🤷';
+//   }
+
+// });
