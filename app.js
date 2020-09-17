@@ -1,419 +1,190 @@
 const map = L.map('map').setView([35.8, -78.65], 11)
-L.esri.basemapLayer('Streets').addTo(map)
+const streets = L.esri.basemapLayer('Streets').addTo(map)
 
 // LAYERS
-let blocks = L.featureGroup()
-let isoline = L.featureGroup()
-let point = L.featureGroup()
-let mapClickPoint = L.featureGroup().addTo(map)
-
-// Service Area Variables 
-const travelModes = {
-  "walkTime": {
-    "attributeParameterValues": [
-      {
-        "attributeName": "Avoid Private Roads",
-        "parameterName": "Restriction Usage",
-        "value": "AVOID_MEDIUM"
-      },
-      {
-        "attributeName": "Walking",
-        "parameterName": "Restriction Usage",
-        "value": "PROHIBITED"
-      },
-      {
-        "attributeName": "Preferred for Pedestrians",
-        "parameterName": "Restriction Usage",
-        "value": "PREFER_LOW"
-      },
-      {
-        "attributeName": "WalkTime",
-        "parameterName": "Walking Speed (km\/h)",
-        "value": 5
-      },
-      {
-        "attributeName": "Avoid Roads Unsuitable for Pedestrians",
-        "parameterName": "Restriction Usage",
-        "value": "AVOID_HIGH"
-      }
-    ],
-    "description": "Follows paths and roads that allow pedestrian traffic and finds solutions that optimize travel time. The walking speed is set to 5 kilometers per hour.",
-    "distanceAttributeName": "Kilometers",
-    "id": "caFAgoThrvUpkFBW",
-    "impedanceAttributeName": "WalkTime",
-    "name": "Walking Time",
-    "restrictionAttributeNames": [
-      "Avoid Private Roads",
-      "Avoid Roads Unsuitable for Pedestrians",
-      "Preferred for Pedestrians",
-      "Walking"
-    ],
-    "simplificationTolerance": 2,
-    "simplificationToleranceUnits": "esriMeters",
-    "timeAttributeName": "WalkTime",
-    "type": "WALK",
-    "useHierarchy": false,
-    "uturnAtJunctions": "esriNFSBAllowBacktrack"
-  },
-  "driveTime": {
-    "attributeParameterValues": [
-      {
-        "attributeName": "Avoid Unpaved Roads",
-        "parameterName": "Restriction Usage",
-        "value": "AVOID_HIGH"
-      },
-      {
-        "attributeName": "Avoid Private Roads",
-        "parameterName": "Restriction Usage",
-        "value": "AVOID_MEDIUM"
-      },
-      {
-        "attributeName": "Driving an Automobile",
-        "parameterName": "Restriction Usage",
-        "value": "PROHIBITED"
-      },
-      {
-        "attributeName": "Through Traffic Prohibited",
-        "parameterName": "Restriction Usage",
-        "value": "AVOID_HIGH"
-      },
-      {
-        "attributeName": "TravelTime",
-        "parameterName": "Vehicle Maximum Speed (km\/h)",
-        "value": 0
-      },
-      {
-        "attributeName": "Roads Under Construction Prohibited",
-        "parameterName": "Restriction Usage",
-        "value": "PROHIBITED"
-      },
-      {
-        "attributeName": "Avoid Gates",
-        "parameterName": "Restriction Usage",
-        "value": "AVOID_MEDIUM"
-      },
-      {
-        "attributeName": "Avoid Express Lanes",
-        "parameterName": "Restriction Usage",
-        "value": "PROHIBITED"
-      },
-      {
-        "attributeName": "Avoid Carpool Roads",
-        "parameterName": "Restriction Usage",
-        "value": "PROHIBITED"
-      }
-    ],
-    "description": "Models the movement of cars and other similar small automobiles, such as pickup trucks, and finds solutions that optimize travel time. Travel obeys one-way roads, avoids illegal turns, and follows other rules that are specific to cars. When you specify a start time, dynamic travel speeds based on traffic are used where it is available.",
-    "distanceAttributeName": "Kilometers",
-    "id": "FEgifRtFndKNcJMJ",
-    "impedanceAttributeName": "TravelTime",
-    "name": "Driving Time",
-    "restrictionAttributeNames": [
-      "Avoid Unpaved Roads",
-      "Avoid Private Roads",
-      "Driving an Automobile",
-      "Through Traffic Prohibited",
-      "Roads Under Construction Prohibited",
-      "Avoid Gates",
-      "Avoid Express Lanes",
-      "Avoid Carpool Roads"
-    ],
-    "simplificationTolerance": 10,
-    "simplificationToleranceUnits": "esriMeters",
-    "timeAttributeName": "TravelTime",
-    "type": "AUTOMOBILE",
-    "useHierarchy": true,
-    "uturnAtJunctions": "esriNFSBAtDeadEndsAndIntersections"
+let parcels = L.esri.dynamicMapLayer({
+  url: 'https://maps.wakegov.com/arcgis/rest/services/Property/Parcels/MapServer',
+  layers: [0]
+}).addTo(map)
+map.createPane('parcels')
+map.getPane('parcels').style.zIndex = 401
+let recap = L.esri.featureLayer({
+  url: 'https://services.arcgis.com/VTyQ9soqVukalItT/arcgis/rest/services/Racially_or_Ethnically_Concentrated_Areas_of_Poverty/FeatureServer/0',
+  where: "STUSAB='NC' AND COUNTY_NAME='Wake' AND rcap_current=1",
+  style: {
+    weight: 0,
+    fillOpacity: 0.5,
+    fillColor: '#607D8B'
   }
+}).addTo(map)
+map.createPane('recap')
+map.getPane('recap').style.zIndex = 403
+let blocks = L.featureGroup().addTo(map)
+map.createPane('blocks')
+map.getPane('blocks').style.zIndex = 405
+let isoline = L.featureGroup().addTo(map)
+map.createPane('isoline')
+map.getPane('isoline').style.zIndex = 410
+let mapClickPoint = L.featureGroup().addTo(map)
+map.createPane('mapClickPoint')
+
+let overlays = {
+  'Selected Location': mapClickPoint,
+  'Service Area': isoline,
+  'Selected Blocks': blocks,
+  'Racially or Ethnically Concentrated Areas of Poverty': recap,
+  'Wake County Parcels': parcels
 }
+let baseLayers = {
+  'Streets': streets
+}
+
+L.control.layers(baseLayers, overlays).addTo(map)
+
 
 map.on('click', e => {
   // Clear previous analysis layers
+  blocks.clearLayers()
+  isoline.clearLayers()
   mapClickPoint.clearLayers()
 
   // Get parameters
 
+  let inputXY = [e.latlng.lat, e.latlng.lng]
+  let mode = getCheckedRadioValue('mode')
+  let minutes = rangeSlider.value
+
   // Run Analysis
 
-  // Add Layers
-  mapClickPoint.addLayer(L.marker([e.latlng.lat, e.latlng.lng]))
+  // KEEP THIS FOR TESTING
+  // let bufferDistance;
+  // if (mode == '1') {
+  //   bufferDistance = parseFloat(minutes) * 0.583
+  // } else {
+  //   bufferDistance = parseFloat(minutes) * 0.08 
+  // }
 
+  // let saPolygonJSON = turf.featureCollection([
+  //   turf.buffer(
+  //     turf.flip(turf.point(inputXY)),
+  //     bufferDistance,
+  //     { unit: 'miles' }
+  //   )
+  // ])
+
+  let saURL = `https://utility.arcgis.com/usrsvcs/appservices/cD6s6VKuje0IvTZF/rest/services/World/ServiceAreas/NAServer/ServiceArea_World/solveServiceArea?facilities=${e.latlng.lng},${e.latlng.lat}&f=json&travelMode=${mode}&defaultBreaks=${minutes}f=geojson`
+
+  fetch(saURL)
+    .then(result => {
+      return result.json()
+    })
+    .then(json => {
+      saPolygonJSON = L.esri.Util.arcgisToGeoJSON(json.saPolygons)
+      // Query service and calculate values
+      let query = L.esri.query({
+        url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/los_mbo_la_cb_20200724_20200831_update/FeatureServer/0'
+      })
+      query.intersects(saPolygonJSON.features[0])
+      query.fields(["los_total_score", "lap_mboweighted_w_centers_score", "totpop_2020", "social_equity_score"])
+      console.log(query)
+      query.run((err, results, raw) => {
+        let features = results.features
+        blocks.addLayer(L.geoJSON(turf.featureCollection(features), {
+          style: {
+            weight: 0,
+            color: '#673AB7'
+          }
+        }))
+        map.fitBounds(blocks.getBounds())
+
+        // Total Population
+        let totpopSum = ss.sum(features.map(f => f.properties.totpop_2020))
+        document.getElementById("totpop-stat").innerText = totpopSum.toLocaleString();
+
+        // LOS
+        let losScoreMean = Math.round(ss.mean(features.map(f => f.properties.los_total_score)))
+        document.getElementById("los-stat").innerText = `${losScoreToGrade(losScoreMean)} (${losScoreMean.toFixed(2)})`;
+
+        // LAP
+        let lapScoreMean = Math.round(ss.mean(features.map(f => f.properties.lap_mboweighted_w_centers_score)))
+        document.getElementById("lap-stat").innerText = `${priorityLevel(lapScoreMean)} (${lapScoreMean.toFixed(2)})`;
+
+        // Social Equity Score
+        let sesScoreMean = ss.mean(features.map(f => f.properties.social_equity_score))
+        document.getElementById("ses-stat").innerText = sesScoreMean.toFixed(2);
+      })
+
+      // Add Layers
+      mapClickPoint.addLayer(L.circleMarker(inputXY, {
+        radius: 12,
+        weight: 0,
+        color: "#121212",
+        opacity: 0.25,
+        fillOpacity: 0.5
+      }))
+      isoline.addLayer(L.geoJSON(saPolygonJSON, {
+        style: {
+          fillOpacity: 0,
+          weight: 2,
+          color: '#121212',
+          dashArray: "5 5"
+        }
+      }))
+
+    })
+    .catch(err => {
+      console.log(err)
+    })
 })
 
 
-  // UI
 
-  // Checked Radio Button 
-  function getCheckedRadioValue(name) {
-    const radios = document.querySelectorAll(`input[name=${name}]`)
-    let selectedValue;
-    for (const radio of radios) {
-      if (radio.checked) {
-        selectedValue = radio.value
-        break
-      }
+function losScoreToGrade(score) {
+  return score >= 17 ? 'A' :
+    score >= 13 ? 'B' :
+    score >= 9 ? 'C' :
+    score >= 5 ? 'D' :
+    score === 4 ? 'F' :
+    '';
+}
+
+function priorityLevel(val) {
+  return val >= 80 ? 'Very High' :
+    val >= 60 ? 'High' :
+    val >= 40 ? 'Medium' :
+    val >= 20 ? 'Low' :
+    val >= 0 ? 'Very Low' :
+    '🤷';
+}
+
+// UI
+
+// Checked Radio Button 
+function getCheckedRadioValue(name) {
+  const radios = document.querySelectorAll(`input[name=${name}]`)
+  let selectedValue;
+  for (const radio of radios) {
+    if (radio.checked) {
+      selectedValue = radio.value
+      break
     }
-    return selectedValue
   }
-  // Clear everything
-  // document.getElementById("clear-button").addEventListener("click", resetResults)
+  return selectedValue
+}
+// Clear everything
+document.getElementById("clear-button").addEventListener("click", resetResults)
 
-  // function clearGraphics(layer) {
-  //   layer.removeAll();
-  // }
+function resetResults() {
+  blocks.clearLayers()
+  isoline.clearLayers()
+  mapClickPoint.clearLayers()
+  for (stat of ["totpop-stat", "los-stat", "lap-stat", "ses-stat"]) {
+    document.getElementById(stat).innerText = "-"
+  }
+}
 
-  // function resetResults() {
-  //   clearGraphics(nsaLayer);
-  //   clearGraphics(pointLayer);
-  //   if (highlight) {
-  //     highlight.remove();
-  //   }
-  //   for (stat of ["totpop-stat", "los-stat", "lap-stat", "ses-stat"]) {
-  //     document.getElementById(stat).innerText = "-"
-  //   }
-  // }
-
-  // Range slider
-  const rangeSlider = document.getElementById("minutes");
-  rangeSlider.addEventListener("input", () => {
-    document.getElementById("minutes-slider-value").innerText = rangeSlider.value
-  })
-
-
-
-
-
-// require([
-//   "esri/Map",
-//   "esri/views/MapView",
-//   "esri/layers/FeatureLayer",
-//   "esri/layers/GeoJSONLayer",
-//   "esri/layers/GraphicsLayer",
-//   "esri/tasks/ServiceAreaTask",
-//   "esri/tasks/support/ServiceAreaParameters",
-//   "esri/tasks/support/FeatureSet",
-//   "esri/Graphic",
-//   "esri/widgets/LayerList",
-//   "esri/widgets/Expand",
-//   "esri/core/watchUtils"
-// ], function (Map, MapView, FeatureLayer, GeoJSONLayer, GraphicsLayer, ServiceAreaTask, ServiceAreaParams, FeatureSet, Graphic, LayerList, Expand, watchUtils) {
-
-//   const map = new Map({
-//     basemap: "streets-navigation-vector"
-//   });
-
-//   const view = new MapView({
-//     container: "viewDiv",
-//     map: map,
-//     zoom: 14,
-//     center: [-78.613186, 35.792954],
-//     highlightOptions: {
-//       color: '#673AB7',
-//       haloOpacity: 0,
-//       fillOpacity: 0.25
-//     }
-//   });
-
-//   // LAYERS
-//   let blocksLayer = new GeoJSONLayer({
-//     url: "./data.geojson",
-//     outFields: ["los_total_score", "lap_score", "totpop_2020", "ses_2018"],
-//     listMode: 'hide',
-//     renderer: {
-//       type: "simple",
-//       symbol: {
-//         type: "simple-fill",
-//         color: [0, 0, 0, 0],
-//         outline: {
-//           width: 0
-//         }
-//       }
-//     }
-//   })
-
-//   let recapLayer = new FeatureLayer({
-//     url: 'https://services.arcgis.com/VTyQ9soqVukalItT/arcgis/rest/services/Racially_or_Ethnically_Concentrated_Areas_of_Poverty/FeatureServer/0',
-//     outFields: ['GEOID', 'STUSAB', 'COUNTY_NAME', 'rcap_current'],
-//     definitionExpression: "STUSAB='NC' AND COUNTY_NAME='Wake' AND rcap_current=1",
-//     title: "Racially/Ethnically Concentrated Areas of Poverty",
-//     visible: false,
-//     renderer: {
-//       type: "simple",
-//       symbol: {
-//         type: 'simple-fill',
-//         style: 'diagonal-cross',
-//         color: '#90A4AE',
-//         outline: {
-//           width: 0
-//         }
-//       }
-//     }
-//   })
-//   let highlight;
-//   let nsaGeometry;
-//   let nsaLayer = new GraphicsLayer({
-//     listMode: 'hide'
-//   });
-//   let pointLayer = new GraphicsLayer({
-//     listMode: 'hide'
-//   });
-//   map.addMany([blocksLayer, recapLayer, nsaLayer, pointLayer]);
-
-//   // Expandable layer list to toggle R/ECAP layer
-//   view.when( () => {
-//     const layerList = new LayerList({
-//       container: document.createElement('div'),
-//       view: view
-//     })
-//     const layerListExpand = new Expand({
-//       expandIconClass: 'esri-icon-layer-list',
-//       view: view,
-//       content: layerList.domNode
-//     })
-
-//     view.ui.add(layerListExpand, 'top-right')
-//   }) 
-//   //FUNCTIONS
-
-//   // Main Query Function
-//   let blocksLayerView;
-//   view.whenLayerView(blocksLayer).then(lv => {
-//     blocksLayerView = lv;
-//     watchUtils.whenFalseOnce(blocksLayerView, "updating", val => {
-//       view.on(["click"], evt => {
-//         // CLEAR PREVIOUS RESULTS
-//         resetResults();
-//         // RETRIEVE SERVICE AREA
-//         // Generate isochrone
-//         let serviceAreaTask = new ServiceAreaTask({
-//           url: "https://utility.arcgis.com/usrsvcs/appservices/cD6s6VKuje0IvTZF/rest/services/World/ServiceAreas/NAServer/ServiceArea_World/solveServiceArea"
-//         })
-//         let mode = getCheckedRadioValue("mode")
-//         if (mode === "1") {
-//           time = 5
-//         } else if (mode === "5") {
-//           time = 10
-//         }
-
-//         let point = view.toMap(evt);
-//         pointGraphic = createPointGraphic(pointLayer, point)
-//         let featureSet = new FeatureSet({
-//           features: [pointGraphic]
-//         })
-//         // "1" is the itemId value for the Driving Time travel mode on this Network Analyst server
-//         // "5" is the itemId value for the Walking Time travel mode on this Network Analyst server
-//         // More info on how to find your travel modes IDs:
-//         // https://developers.arcgis.com/rest/services-reference/gettravelmodes-tool.htm
-//         let serviceAreaParams = new ServiceAreaParams({
-//           facilities: featureSet,
-//           travelMode: mode,
-//           defaultBreaks: [time]
-//         });
-//         serviceAreaTask.solve(serviceAreaParams)
-//           .then(result => {
-//             nsaGeometry = result.serviceAreaPolygons[0].geometry
-//             createNSAGraphic(nsaLayer, nsaGeometry)
-//             view.goTo(nsaGeometry.extent)
-//             // Query the blocks using the resulting isochrone
-//             let query = blocksLayerView.layer.createQuery();
-//             query.outStatistics = statDefinitions;
-//             query.geometry = nsaGeometry;
-
-//             blocksLayerView.queryFeatures(query)
-//               .then(results => {
-//                 const attributes = results.features[0].attributes
-//                 console.log(attributes)
-//                 document.getElementById("totpop-stat").innerText = attributes.totpop_2020_sum.toLocaleString();
-//                 document.getElementById("los-stat").innerText = `${losScoreToGrade(attributes.los_total_score_mean)} (${attributes.los_total_score_mean.toFixed(2)})`;
-//                 document.getElementById("lap-stat").innerText = `${priorityLevel(attributes.lap_score_mean)} (${attributes.lap_score_mean.toFixed(2)})`;
-//                 document.getElementById("ses-stat").innerText = attributes.ses_2018_mean.toFixed(2);
-//                 watchUtils.whenFalseOnce(blocksLayerView, "updating", val => {
-//                   blocksLayerView.queryObjectIds(query)
-//                     .then(ids => {
-//                       if (highlight) {
-//                         highlight.remove();
-//                       }
-//                       highlight = blocksLayerView.highlight(ids)
-//                     })
-//                 })
-//               })
-//           })
-//       })
-//     })
-//   })
-
-//   // Graphics
-//   function createPointGraphic(layer, point) {
-//     let graphic = new Graphic({
-//       geometry: point,
-//       symbol: {
-//         type: "simple-marker",
-//         color: [0, 0, 0, 0.5],
-//         size: 12,
-//         outline: {
-//           width: 0
-//         }
-//       }
-//     });
-
-//     layer.add(graphic);
-//     return graphic;
-//   }
-
-//   function createNSAGraphic(layer, nsaGeometry) {
-//     let graphic = new Graphic({
-//       geometry: nsaGeometry,
-//       symbol: {
-//         type: "simple-line",
-//         color: [0, 0, 0, 0.5],
-//         width: 1.25,
-//         join: "round",
-//         miter: "square"
-//       }
-//     });
-//     layer.add(graphic);
-//     return graphic;
-//   }
-
-//   // Stats
-//   const statDefinitions = [{
-//     onStatisticField: "1=1",
-//     outStatisticFieldName: "count",
-//     statisticType: "count"
-//   }, {
-//     onStatisticField: "totpop_2020",
-//     outStatisticFieldName: "totpop_2020_sum",
-//     statisticType: "sum"
-//   }, {
-//     onStatisticField: "los_total_score",
-//     outStatisticFieldName: "los_total_score_mean",
-//     statisticType: "avg"
-//   }, {
-//     onStatisticField: "lap_score",
-//     outStatisticFieldName: "lap_score_mean",
-//     statisticType: "avg"
-//   }, {
-//     onStatisticField: "ses_2018",
-//     outStatisticFieldName: "ses_2018_mean",
-//     statisticType: "avg"
-//   }]
-
-//   function losScoreToGrade(score) {
-//     return score >= 17 ? 'A' :
-//       score >= 13 ? 'B' :
-//       score >= 9 ? 'C' :
-//       score >= 5 ? 'D' :
-//       score === 4 ? 'F' :
-//       '';
-//   }
-
-//   function priorityLevel(val) {
-//     return val >= 80 ? 'Very High' :
-//            val >= 60 ? 'High'      :
-//            val >= 40 ? 'Medium'    :
-//            val >= 20 ? 'Low'       :
-//            val >=  0 ? 'Very Low'  :
-//                        '🤷';
-//   }
-
-// });
+// Range slider
+const rangeSlider = document.getElementById("minutes");
+rangeSlider.addEventListener("input", () => {
+  document.getElementById("minutes-slider-value").innerText = rangeSlider.value
+})
