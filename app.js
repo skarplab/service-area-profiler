@@ -2,12 +2,46 @@ const map = L.map('map').setView([35.8, -78.65], 11)
 const streets = L.esri.basemapLayer('Streets').addTo(map)
 
 // LAYERS
+
+
+function lapColor(score) {
+  return score >= 90 ? '#a50026' :
+    score >= 80 ? '#d73027' :
+    score >= 70 ? '#f46d43' :
+    score >= 60 ? '#fdae61' :
+    score >= 50 ? '#fee090' :
+    score >= 40 ? '#e0f3f8' :
+    score >= 30 ? '#abd9e9' :
+    score >= 20 ? '#74add1' :
+    score >= 10 ? '#4575b4' :
+    '#313695';
+}
+
+map.createPane('lap')
+map.getPane('lap').style.zIndex = 403
+let lap = L.esri.featureLayer({
+  url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/spa_20201027/FeatureServer/0',
+  where: "etj = 1",
+  pane: 'lap',
+  style: feature => {
+    return {
+      fillColor: lapColor(feature.properties.lap_score),
+      weight: 0,
+      fillOpacity: 1
+    }
+  }
+})
+
+map.createPane('parcels')
+map.getPane('parcels').style.zIndex = 405
 let parcels = L.esri.dynamicMapLayer({
   url: 'https://maps.wakegov.com/arcgis/rest/services/Property/Parcels/MapServer',
-  layers: [0]
+  layers: [0],
+  pane: 'parcels'
 }).addTo(map)
-map.createPane('parcels')
-map.getPane('parcels').style.zIndex = 401
+
+map.createPane('recap')
+map.getPane('recap').style.zIndex = 409
 let recap = L.esri.featureLayer({
   url: 'https://services.arcgis.com/VTyQ9soqVukalItT/arcgis/rest/services/Racially_or_Ethnically_Concentrated_Areas_of_Poverty/FeatureServer/0',
   where: "STUSAB='NC' AND COUNTY_NAME='Wake' AND rcap_current=1",
@@ -15,25 +49,26 @@ let recap = L.esri.featureLayer({
     weight: 0,
     fillOpacity: 0.5,
     fillColor: '#607D8B'
-  }
+  },
+  pane: 'recap'
 }).addTo(map)
-map.createPane('recap')
-map.getPane('recap').style.zIndex = 403
-let blocks = L.featureGroup().addTo(map)
 map.createPane('blocks')
-map.getPane('blocks').style.zIndex = 405
-let isoline = L.featureGroup().addTo(map)
+map.getPane('blocks').style.zIndex = 413
+let blocks = L.featureGroup({pane: 'blocks'}).addTo(map)
 map.createPane('isoline')
-map.getPane('isoline').style.zIndex = 410
-let mapClickPoint = L.featureGroup().addTo(map)
+map.getPane('isoline').style.zIndex = 417
+let isoline = L.featureGroup({pane: 'isoline'}).addTo(map)
 map.createPane('mapClickPoint')
+map.getPane('mapClickPoint').style.zIndex = 421
+let mapClickPoint = L.featureGroup({pane: 'mapClickPoint'}).addTo(map)
 
 let overlays = {
   'Selected Location': mapClickPoint,
   'Service Area': isoline,
   'Selected Blocks': blocks,
   'Racially or Ethnically Concentrated Areas of Poverty': recap,
-  'Wake County Parcels': parcels
+  'Wake County Parcels': parcels,
+  'Land Acquisition Prioritization': lap
 }
 let baseLayers = {
   'Streets': streets
@@ -82,10 +117,12 @@ map.on('click', e => {
       saPolygonJSON = L.esri.Util.arcgisToGeoJSON(json.saPolygons)
       // Query service and calculate values
       let query = L.esri.query({
-        url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/los_mbo_la_cb_20200724_20200831_update/FeatureServer/0'
+        // url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/los_mbo_la_cb_20200724_20200831_update/FeatureServer/0'
+        url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/spa_20201027/FeatureServer/0'
       })
+      query.where("etj = 1")
       query.intersects(saPolygonJSON.features[0])
-      query.fields(["los_total_score", "lap_mboweighted_w_centers_score", "totpop_2020", "social_equity_score"])
+      query.fields(["spa_current_total_score", "lap_score", "population", "social_equity_score"])
       console.log(query)
       query.run((err, results, raw) => {
         let features = results.features
@@ -93,20 +130,21 @@ map.on('click', e => {
           style: {
             weight: 0,
             color: '#673AB7'
-          }
+          },
+          pane: 'blocks'
         }))
         map.fitBounds(blocks.getBounds())
 
         // Total Population
-        let totpopSum = ss.sum(features.map(f => f.properties.totpop_2020))
+        let totpopSum = ss.sum(features.map(f => f.properties.population))
         document.getElementById("totpop-stat").innerText = totpopSum.toLocaleString();
 
         // LOS
-        let losScoreMean = Math.round(ss.mean(features.map(f => f.properties.los_total_score)))
+        let losScoreMean = Math.round(ss.mean(features.map(f => f.properties.spa_current_total_score)))
         document.getElementById("los-stat").innerText = `${losScoreToGrade(losScoreMean)} (${losScoreMean.toFixed(2)})`;
 
         // LAP
-        let lapScoreMean = Math.round(ss.mean(features.map(f => f.properties.lap_mboweighted_w_centers_score)))
+        let lapScoreMean = Math.round(ss.mean(features.map(f => f.properties.lap_score)))
         document.getElementById("lap-stat").innerText = `${priorityLevel(lapScoreMean)} (${lapScoreMean.toFixed(2)})`;
 
         // Social Equity Score
@@ -120,7 +158,8 @@ map.on('click', e => {
         weight: 0,
         color: "#121212",
         opacity: 0.25,
-        fillOpacity: 0.5
+        fillOpacity: 0.5,
+        pane: 'mapClickPoint'
       }))
       isoline.addLayer(L.geoJSON(saPolygonJSON, {
         style: {
@@ -128,7 +167,8 @@ map.on('click', e => {
           weight: 2,
           color: '#121212',
           dashArray: "5 5"
-        }
+        },
+        pane: 'isoline'
       }))
 
     })
