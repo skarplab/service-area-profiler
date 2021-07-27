@@ -20,7 +20,7 @@ function lapColor(score) {
 map.createPane('lap')
 map.getPane('lap').style.zIndex = 403
 let lap = L.esri.featureLayer({
-  url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/spa_20201027/FeatureServer/0',
+  url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/spa_20210721/FeatureServer/0',  // Actual date is from 20210727 but I made a typo creating the service
   where: "etj = 1",
   pane: 'lap',
   style: feature => {
@@ -117,8 +117,7 @@ map.on('click', e => {
       saPolygonJSON = L.esri.Util.arcgisToGeoJSON(json.saPolygons)
       // Query service and calculate values
       let query = L.esri.query({
-        // url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/los_mbo_la_cb_20200724_20200831_update/FeatureServer/0'
-        url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/spa_20201027/FeatureServer/0'
+        url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/spa_20210721/FeatureServer/0' // Actual date is from 20210727 but I made a typo creating the service
       })
       query.where("etj = 1")
       query.intersects(saPolygonJSON.features[0])
