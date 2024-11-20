@@ -119,7 +119,6 @@ map.on('click', e => {
       let query = L.esri.query({
         url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/Raleigh_Census_Block_Groups_2024_Park_Equity_Analysis/FeatureServer/0' // Actual date is from 20210727 but I made a typo creating the service
       })
-      query.where("etj = 1")
       query.intersects(saPolygonJSON.features[0])
       query.fields(["HistInequity", "HealthWellness", "EnvironJust", "WalkDemand"])
       console.log(query)
