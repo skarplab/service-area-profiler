@@ -71,7 +71,7 @@ let overlays = {
   'Land Acquisition Prioritization': lap
 }
 let baseLayers = {
-  'Streets': topographic
+  'Topographic': topographic
 }
 
 L.control.layers(baseLayers, overlays).addTo(map)
