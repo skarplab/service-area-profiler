@@ -52,6 +52,13 @@ let recap = L.esri.featureLayer({
   },
   pane: 'recap'
 }).addTo(map)
+
+map.createPane('parks')
+map.getPane('parks').style.zIndex = 411
+let parks = L.esri.featureLayer({
+  url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/Parks/FeatureServer/0',
+  pane: 'parks'
+
 map.createPane('blocks')
 map.getPane('blocks').style.zIndex = 413
 let blocks = L.featureGroup({pane: 'blocks'}).addTo(map)
@@ -61,12 +68,6 @@ let isoline = L.featureGroup({pane: 'isoline'}).addTo(map)
 map.createPane('mapClickPoint')
 map.getPane('mapClickPoint').style.zIndex = 421
 let mapClickPoint = L.featureGroup({pane: 'mapClickPoint'}).addTo(map)
-
-map.createPane('parks')
-map.getPane('parks').style.zIndex = 425
-let parks = L.esri.featureLayer({
-  url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/Parks/FeatureServer/0',
-  pane: 'parks'
 
 let overlays = {
   'Selected Location': mapClickPoint,
