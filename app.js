@@ -68,7 +68,6 @@ let parks = L.esri.dynamicMapLayer({
   url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/Parks/FeatureServer',
   layers: [0],
   pane: 'parks'
-}).addTo(map)
 
 let overlays = {
   'Selected Location': mapClickPoint,
