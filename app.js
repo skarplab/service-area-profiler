@@ -17,20 +17,27 @@ function lapColor(score) {
     '#313695';
 }
 
-map.createPane('lap')
-map.getPane('lap').style.zIndex = 403
-let lap = L.esri.featureLayer({
-  url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/spa_20210721/FeatureServer/0',  // Actual date is from 20210727 but I made a typo creating the service
-  where: "etj = 1",
-  pane: 'lap',
-  style: feature => {
-    return {
-      fillColor: lapColor(feature.properties.lap_score),
-      weight: 0,
-      fillOpacity: 1
-    }
-  }
+map.createPane('equity')
+map.getPane('equity').style.zIndex = 403
+let equity = L.esri.featureLayer({
+  url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/Raleigh_Census_Block_Groups_2024_Park_Equity_Analysis/FeatureServer/0',  // Actual date is from 20210727 but I made a typo creating the service
+  pane: 'equity',
 })
+
+//map.createPane('lap')
+//map.getPane('lap').style.zIndex = 403
+//let lap = L.esri.featureLayer({
+  //url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/spa_20210721/FeatureServer/0',  // Actual date is from 20210727 but I made a typo creating the service
+  //where: "etj = 1",
+  //pane: 'lap',
+  //style: feature => {
+    //return {
+      //fillColor: lapColor(feature.properties.lap_score),
+      //weight: 0,
+      //fillOpacity: 1
+    //}
+  //}
+//})
 
 map.createPane('parcels')
 map.getPane('parcels').style.zIndex = 405
@@ -75,7 +82,7 @@ let overlays = {
   'Selected Blocks': blocks,
   'Racially or Ethnically Concentrated Areas of Poverty': recap,
   'Wake County Parcels': parcels,
-  'Land Acquisition Prioritization': lap
+  'Equity': equity
 }
 let baseLayers = {
   'Streets': streets
