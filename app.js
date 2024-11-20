@@ -64,7 +64,7 @@ let mapClickPoint = L.featureGroup({pane: 'mapClickPoint'}).addTo(map)
 
 map.createPane('parks')
 map.getPane('parks').style.zIndex = 425
-let parks = L.esri.dynamicMapLayer({
+let parks = L.esri.featureLayer({
   url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/Parks/FeatureServer',
   layers: [0],
   pane: 'parks'
