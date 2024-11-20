@@ -76,7 +76,6 @@ let overlays = {
   'Racially or Ethnically Concentrated Areas of Poverty': recap,
   'Wake County Parcels': parcels,
   'Land Acquisition Prioritization': lap
-  'Parks with Equity Metrics': parks
 }
 let baseLayers = {
   'Streets': streets
