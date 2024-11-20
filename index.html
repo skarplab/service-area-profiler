@@ -27,7 +27,7 @@
             <div>
               <label for="minutes">Minutes:</label>
               <input type="range" name="minutes" id="minutes" min="0" max="10" step="1" value="10"><span
-                id="minutes-slider-value">10</span>
+                id="minutes-slider-value">10</span><
             </div>
           </fieldset>
           <fieldset>
@@ -35,6 +35,15 @@
             <div>
               <label for="walk">Walk</label><input type="radio" name="mode" id="walk" value="5" checked>
               <label for="drive">Drive</label><input type="radio" name="mode" id="drive" value="1">
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Select a Park</legend>
+            </div>
+              <label for="parkDropdown">Select a Park:</label>
+              <select id="parkDropdown">
+                <option value="">-- Choose a Park --</option>
+              </select>
             </div>
           </fieldset>
         </form>
