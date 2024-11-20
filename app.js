@@ -62,6 +62,14 @@ map.createPane('mapClickPoint')
 map.getPane('mapClickPoint').style.zIndex = 421
 let mapClickPoint = L.featureGroup({pane: 'mapClickPoint'}).addTo(map)
 
+map.createPane('parks')
+map.getPane('parks').style.zIndex = 425
+let parks = L.esri.dynamicMapLayer({
+  url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/Parks/FeatureServer',
+  layers: [0],
+  pane: 'parks'
+}).addTo(map)
+
 let overlays = {
   'Selected Location': mapClickPoint,
   'Service Area': isoline,
@@ -69,6 +77,7 @@ let overlays = {
   'Racially or Ethnically Concentrated Areas of Poverty': recap,
   'Wake County Parcels': parcels,
   'Land Acquisition Prioritization': lap
+  'Parks with Equity Metrics': parks
 }
 let baseLayers = {
   'Streets': streets
