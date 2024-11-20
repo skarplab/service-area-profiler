@@ -117,11 +117,11 @@ map.on('click', e => {
       saPolygonJSON = L.esri.Util.arcgisToGeoJSON(json.saPolygons)
       // Query service and calculate values
       let query = L.esri.query({
-        url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/spa_20210721/FeatureServer/0' // Actual date is from 20210727 but I made a typo creating the service
+        url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/Raleigh_Census_Block_Groups_2024_Park_Equity_Analysis/FeatureServer/0' // Actual date is from 20210727 but I made a typo creating the service
       })
       query.where("etj = 1")
       query.intersects(saPolygonJSON.features[0])
-      query.fields(["spa_current_total_score", "lap_score", "population", "social_equity_score"])
+      query.fields(["HistInequity", "HealthWellness", "EnvironJust", "WalkDemand"])
       console.log(query)
       query.run((err, results, raw) => {
         let features = results.features
@@ -134,21 +134,21 @@ map.on('click', e => {
         }))
         map.fitBounds(blocks.getBounds())
 
-        // Total Population
-        let totpopSum = ss.sum(features.map(f => f.properties.population))
-        document.getElementById("totpop-stat").innerText = totpopSum.toLocaleString();
+        // Historic Inequity
+        let inequityMean = ss.sum(features.map(f => f.properties.HistInequity))
+        document.getElementById("inequity-stat").innerText = inequityMean.toFixed(2);
 
-        // LOS
-        let losScoreMean = Math.round(ss.mean(features.map(f => f.properties.spa_current_total_score)))
-        document.getElementById("los-stat").innerText = `${losScoreToGrade(losScoreMean)} (${losScoreMean.toFixed(2)})`;
+        // Health and Wellness
+        let healthwellnessMean = Math.round(ss.mean(features.map(f => f.properties.HealthWellness)))
+        document.getElementById("healthwellness-stat").innerText = healthwellnessMean.toFixed(2);
 
-        // LAP
-        let lapScoreMean = Math.round(ss.mean(features.map(f => f.properties.lap_score)))
-        document.getElementById("lap-stat").innerText = `${priorityLevel(lapScoreMean)} (${lapScoreMean.toFixed(2)})`;
+        // Environmental Justice
+        let environMean = Math.round(ss.mean(features.map(f => f.properties.EnvironJust)))
+        document.getElementById("environ-stat").innerText = environMean.toFixed(2);
 
         // Social Equity Score
-        let sesScoreMean = ss.mean(features.map(f => f.properties.social_equity_score))
-        document.getElementById("ses-stat").innerText = sesScoreMean.toFixed(2);
+        let walkdemandMean = ss.mean(features.map(f => f.properties.WalkDemand))
+        document.getElementById("walkdemand-stat").innerText = walkdemandMean.toFixed(2);
       })
 
       // Add Layers
@@ -217,7 +217,7 @@ function resetResults() {
   blocks.clearLayers()
   isoline.clearLayers()
   mapClickPoint.clearLayers()
-  for (stat of ["totpop-stat", "los-stat", "lap-stat", "ses-stat"]) {
+  for (stat of ["inequity-stat", "healthwellness-stat", "environ-stat", "walkdemand-stat"]) {
     document.getElementById(stat).innerText = "-"
   }
 }
