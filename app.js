@@ -1,5 +1,5 @@
 const map = L.map('map').setView([35.8, -78.65], 11)
-const streets = L.esri.basemapLayer('Streets').addTo(map)
+const streets = L.esri.basemapLayer('Topographic').addTo(map)
 
 // LAYERS
 
