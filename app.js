@@ -53,11 +53,11 @@ let recap = L.esri.featureLayer({
   pane: 'recap'
 }).addTo(map)
 
-//map.createPane('parks')
-//map.getPane('parks').style.zIndex = 411
-//let parks = L.esri.featureLayer({
-  //url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/Parks/FeatureServer/0',
-  //pane: 'parks'
+map.createPane('parks')
+map.getPane('parks').style.zIndex = 411
+let parks = L.esri.featureLayer({
+  url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/Parks/FeatureServer/0',
+  pane: 'parks'
 
 map.createPane('blocks')
 map.getPane('blocks').style.zIndex = 413
@@ -75,7 +75,8 @@ let overlays = {
   'Selected Blocks': blocks,
   'Racially or Ethnically Concentrated Areas of Poverty': recap,
   'Wake County Parcels': parcels,
-  'Land Acquisition Prioritization': lap
+  'Land Acquisition Prioritization': lap,
+  'Parks': parks
 }
 let baseLayers = {
   'Streets': streets
