@@ -152,7 +152,7 @@ map.on('click', e => {
         let environMean = Math.round(ss.mean(features.map(f => f.properties.EnvironJust)))
         document.getElementById("environ-stat").innerText = environMean.toFixed(2);
 
-        // Social Equity Score
+        // Walkability Demand
         let walkdemandMean = ss.mean(features.map(f => f.properties.WalkDemand))
         document.getElementById("walkdemand-stat").innerText = walkdemandMean.toFixed(2);
       })
