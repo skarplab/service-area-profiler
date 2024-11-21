@@ -139,6 +139,10 @@ map.on('click', e => {
       console.log(query)
       query.run((err, results, raw) => {
         let features = results.features
+        if (features.length === 0) {
+          console.warn("No features returned from the query.");
+          return;
+        }
         blockgroups.addLayer(L.geoJSON(turf.featureCollection(features), {
           style: {
             weight: 0,
