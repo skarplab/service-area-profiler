@@ -67,9 +67,9 @@ let recap = L.esri.featureLayer({
   //url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/Parks/FeatureServer/0',
   //pane: 'parks'
 
-map.createPane('blocks')
-map.getPane('blocks').style.zIndex = 413
-let blocks = L.featureGroup({pane: 'blocks'}).addTo(map)
+map.createPane('blockgroups')
+map.getPane('blockgroups').style.zIndex = 413
+let blockgroups = L.featureGroup({pane: 'blockgroups'}).addTo(map)
 map.createPane('isoline')
 map.getPane('isoline').style.zIndex = 417
 let isoline = L.featureGroup({pane: 'isoline'}).addTo(map)
@@ -80,7 +80,7 @@ let mapClickPoint = L.featureGroup({pane: 'mapClickPoint'}).addTo(map)
 let overlays = {
   'Selected Location': mapClickPoint,
   'Service Area': isoline,
-  'Selected Blocks': blocks,
+  'Selected Block Groups': blockgroups,
   'Racially or Ethnically Concentrated Areas of Poverty': recap,
   'Wake County Parcels': parcels,
   'Equity': equity
@@ -94,7 +94,7 @@ L.control.layers(baseLayers, overlays).addTo(map)
 
 map.on('click', e => {
   // Clear previous analysis layers
-  blocks.clearLayers()
+  blockgroups.clearLayers()
   isoline.clearLayers()
   mapClickPoint.clearLayers()
 
