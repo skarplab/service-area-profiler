@@ -139,14 +139,14 @@ map.on('click', e => {
       console.log(query)
       query.run((err, results, raw) => {
         let features = results.features
-        blocks.addLayer(L.geoJSON(turf.featureCollection(features), {
+        equity.addLayer(L.geoJSON(turf.featureCollection(features), {
           style: {
             weight: 0,
             color: '#673AB7'
           },
-          pane: 'blocks'
+          pane: 'equity'
         }))
-        map.fitBounds(blocks.getBounds())
+        map.fitBounds(equity.getBounds())
 
         // Historic Inequity
         let inequityMean = ss.sum(features.map(f => f.properties.HistInequity))
