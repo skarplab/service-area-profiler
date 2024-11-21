@@ -20,7 +20,8 @@ function lapColor(score) {
 map.createPane('equity')
 map.getPane('equity').style.zIndex = 403
 let equity = L.esri.featureLayer({
-  url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/Raleigh_Census_Block_Groups_2024_Park_Equity_Analysis/FeatureServer/0',  // Actual date is from 20210727 but I made a typo creating the service
+  url: 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/Raleigh_Census_Block_Groups_2024_Park_Equity_Analysis/FeatureServer',  // Actual date is from 20210727 but I made a typo creating the service
+  layers: [0],
   pane: 'equity',
 }).addTo(map)
 
